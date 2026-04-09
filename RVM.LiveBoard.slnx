@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RVM.LiveBoard.Domain/RVM.LiveBoard.Domain.csproj" />
+    <Project Path="src/RVM.LiveBoard.Infrastructure/RVM.LiveBoard.Infrastructure.csproj" />
+    <Project Path="src/RVM.LiveBoard.API/RVM.LiveBoard.API.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/RVM.LiveBoard.Test/RVM.LiveBoard.Test.csproj" />
+  </Folder>
+</Solution>
