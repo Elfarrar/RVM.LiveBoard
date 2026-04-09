@@ -1,0 +1,83 @@
+@page "/"
+@using RVM.LiveBoard.Domain.Entities
+@using RVM.LiveBoard.Domain.Interfaces
+@inject IDashboardRepository DashboardRepo
+@inject IAlertRepository AlertRepo
+@inject IMetricDataPointRepository MetricRepo
+
+<PageTitle>Dashboard - RVM.LiveBoard</PageTitle>
+
+<h3>Dashboard</h3>
+
+@if (!_loaded)
+{
+    <div class="loading">Loading dashboard data...</div>
+}
+else
+{
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-value">@_totalDashboards</span>
+            <span class="stat-label">Total Dashboards</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">@_activeAlerts</span>
+            <span class="stat-label">Active Alerts</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">@_metricNamesCount</span>
+            <span class="stat-label">Metric Names</span>
+        </div>
+    </div>
+
+    <h4>Dashboards</h4>
+
+    @if (_dashboards is null || _dashboards.Count == 0)
+    {
+        <div class="empty-state">No dashboards found.</div>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Panels</th>
+                    <th>Refresh Interval</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var dashboard in _dashboards)
+                {
+                    <tr>
+                        <td>@dashboard.Name</td>
+                        <td>@(dashboard.Description ?? "—")</td>
+                        <td>@(dashboard.Panels?.Count ?? 0)</td>
+                        <td>@(dashboard.RefreshIntervalSeconds)s</td>
+                        <td>@dashboard.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private bool _loaded;
+    private int _totalDashboards;
+    private int _activeAlerts;
+    private int _metricNamesCount;
+    private IList<RVM.LiveBoard.Domain.Entities.Dashboard>? _dashboards;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dashboards = (await DashboardRepo.GetAllAsync()).ToList();
+        _totalDashboards = _dashboards.Count;
+        _activeAlerts = await AlertRepo.CountByStatusAsync(AlertStatus.Active);
+        var metricNames = await MetricRepo.GetDistinctMetricNamesAsync();
+        _metricNamesCount = metricNames.Count;
+        _loaded = true;
+    }
+}

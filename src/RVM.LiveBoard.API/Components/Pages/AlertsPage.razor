@@ -1,0 +1,124 @@
+@page "/alerts"
+@using RVM.LiveBoard.Domain.Entities
+@using RVM.LiveBoard.Domain.Interfaces
+@inject IAlertRuleRepository AlertRuleRepo
+@inject IAlertRepository AlertRepo
+
+<PageTitle>Alerts - RVM.LiveBoard</PageTitle>
+
+<h3>Alerts</h3>
+
+@if (!_loaded)
+{
+    <div class="loading">Loading alerts...</div>
+}
+else
+{
+    <h4>Alert Rules</h4>
+
+    @if (_alertRules is null || _alertRules.Count == 0)
+    {
+        <div class="empty-state">No alert rules configured.</div>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Metric</th>
+                    <th>Condition</th>
+                    <th>Severity</th>
+                    <th>Enabled</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var rule in _alertRules)
+                {
+                    <tr>
+                        <td>@rule.Name</td>
+                        <td>@rule.MetricName</td>
+                        <td>@FormatCondition(rule.Condition) @rule.Threshold</td>
+                        <td><span class="badge @GetSeverityBadgeClass(rule.Severity)">@rule.Severity</span></td>
+                        <td>@(rule.IsEnabled ? "Yes" : "No")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <h4>Recent Alerts</h4>
+
+    @if (_recentAlerts is null || _recentAlerts.Count == 0)
+    {
+        <div class="empty-state">No recent alerts.</div>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Fired At</th>
+                    <th>Rule</th>
+                    <th>Status</th>
+                    <th>Trigger Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var alert in _recentAlerts)
+                {
+                    <tr>
+                        <td>@alert.FiredAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td>@(alert.Rule?.Name ?? "—")</td>
+                        <td><span class="badge @GetStatusBadgeClass(alert.Status)">@alert.Status</span></td>
+                        <td>@alert.TriggerValue</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private bool _loaded;
+    private IList<AlertRule>? _alertRules;
+    private IList<Alert>? _recentAlerts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var rulesTask = AlertRuleRepo.GetAllAsync();
+        var alertsTask = AlertRepo.GetByStatusAsync(null, 20, 0);
+
+        await Task.WhenAll(rulesTask, alertsTask);
+
+        _alertRules = (await rulesTask).ToList();
+        _recentAlerts = (await alertsTask).ToList();
+        _loaded = true;
+    }
+
+    private string FormatCondition(string condition) => condition switch
+    {
+        "gt"  => ">",
+        "gte" => ">=",
+        "lt"  => "<",
+        "lte" => "<=",
+        "eq"  => "=",
+        _     => condition
+    };
+
+    private string GetSeverityBadgeClass(AlertSeverity severity) => severity switch
+    {
+        AlertSeverity.Info     => "badge-success",
+        AlertSeverity.Warning  => "badge-warning",
+        AlertSeverity.Critical => "badge-danger",
+        _                      => "badge"
+    };
+
+    private string GetStatusBadgeClass(AlertStatus status) => status switch
+    {
+        AlertStatus.Active       => "badge-danger",
+        AlertStatus.Acknowledged => "badge-warning",
+        AlertStatus.Resolved     => "badge-success",
+        _                        => "badge"
+    };
+}

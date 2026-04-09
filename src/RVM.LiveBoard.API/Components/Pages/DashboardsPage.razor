@@ -1,0 +1,112 @@
+@page "/dashboards"
+@using RVM.LiveBoard.Domain.Entities
+@using RVM.LiveBoard.Domain.Interfaces
+@inject IDashboardRepository DashboardRepo
+
+<PageTitle>Dashboards - RVM.LiveBoard</PageTitle>
+
+<h3>Dashboards</h3>
+
+@if (!_loaded)
+{
+    <div class="loading">Loading dashboards...</div>
+}
+else
+{
+    @if (_dashboards is null || _dashboards.Count == 0)
+    {
+        <div class="empty-state">No dashboards configured.</div>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Default</th>
+                    <th>Panels</th>
+                    <th>Refresh</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var dashboard in _dashboards)
+                {
+                    <tr class="@(_selectedDashboardId == dashboard.Id ? "row-selected" : "")">
+                        <td>@dashboard.Name</td>
+                        <td>@(dashboard.Description ?? "—")</td>
+                        <td>@(dashboard.IsDefault ? "Yes" : "No")</td>
+                        <td>@(dashboard.Panels?.Count ?? 0)</td>
+                        <td>@(dashboard.RefreshIntervalSeconds)s</td>
+                        <td>
+                            <button class="btn-sm" @onclick="() => SelectDashboard(dashboard.Id)">
+                                View Panels
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (_selectedDashboard is not null)
+    {
+        <h4>Panels — @_selectedDashboard.Name</h4>
+
+        @if (_selectedDashboard.Panels is null || _selectedDashboard.Panels.Count == 0)
+        {
+            <div class="empty-state">No panels configured for this dashboard.</div>
+        }
+        else
+        {
+            <div class="stats-grid">
+                @foreach (var panel in _selectedDashboard.Panels.OrderBy(p => p.SortOrder))
+                {
+                    <div class="detail-card" style="grid-column: span @panel.GridWidth; grid-row: span @panel.GridHeight;">
+                        <div class="detail-card-header">
+                            <strong>@panel.Title</strong>
+                            <span class="badge @GetPanelTypeBadgeClass(panel.PanelType)">@panel.PanelType</span>
+                        </div>
+                        <div class="detail-card-body">
+                            <p><strong>Metric:</strong> @panel.MetricName</p>
+                            <p><strong>Aggregation:</strong> @panel.Aggregation</p>
+                            <p><strong>Time Window:</strong> @(panel.TimeWindowMinutes) min</p>
+                            <p><strong>Position:</strong> Col @panel.GridColumn, Row @panel.GridRow (@(panel.GridWidth)x@(panel.GridHeight))</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+}
+
+@code {
+    private bool _loaded;
+    private IList<RVM.LiveBoard.Domain.Entities.Dashboard>? _dashboards;
+    private RVM.LiveBoard.Domain.Entities.Dashboard? _selectedDashboard;
+    private Guid? _selectedDashboardId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dashboards = (await DashboardRepo.GetAllAsync()).ToList();
+        _loaded = true;
+    }
+
+    private async Task SelectDashboard(Guid id)
+    {
+        _selectedDashboardId = id;
+        _selectedDashboard = await DashboardRepo.GetByIdWithPanelsAsync(id);
+    }
+
+    private string GetPanelTypeBadgeClass(PanelType panelType) => panelType switch
+    {
+        PanelType.LineChart => "badge-success",
+        PanelType.BarChart  => "badge-success",
+        PanelType.Gauge     => "badge-warning",
+        PanelType.Counter   => "badge-warning",
+        PanelType.Table     => "badge-danger",
+        PanelType.Heatmap   => "badge-danger",
+        _                   => "badge"
+    };
+}

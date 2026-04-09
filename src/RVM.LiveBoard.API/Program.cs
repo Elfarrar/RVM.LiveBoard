@@ -27,6 +27,8 @@ try
 
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
+    builder.Services.AddRazorComponents()
+        .AddInteractiveServerComponents();
     builder.Services.AddSignalR();
     builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -73,6 +75,8 @@ try
         app.UsePathBase(pathBase);
 
     app.UseForwardedHeaders();
+    app.UseStaticFiles();
+    app.UseAntiforgery();
     app.UseMiddleware<CorrelationIdMiddleware>();
     app.UseSerilogRequestLogging();
     app.UseRateLimiter();
@@ -80,6 +84,8 @@ try
     app.UseAuthorization();
 
     app.MapControllers();
+    app.MapRazorComponents<RVM.LiveBoard.API.Components.App>()
+        .AddInteractiveServerRenderMode();
     app.MapHub<LiveMetricHub>("/hubs/live-metrics").AllowAnonymous();
     app.MapHealthChecks("/health").AllowAnonymous();
 
