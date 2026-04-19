@@ -19,11 +19,18 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
-    builder.Host.UseSerilog((context, services, configuration) => configuration
-        .ReadFrom.Configuration(context.Configuration)
-        .ReadFrom.Services(services)
-        .Enrich.FromLogContext()
-        .WriteTo.Console(new RenderedCompactJsonFormatter()));
+    builder.Host.UseSerilog((context, services, configuration) =>
+    {
+        configuration
+            .ReadFrom.Configuration(context.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext()
+            .WriteTo.Console(new RenderedCompactJsonFormatter());
+
+        var seqUrl = context.Configuration["Seq:ServerUrl"];
+        if (!string.IsNullOrEmpty(seqUrl))
+            configuration.WriteTo.Seq(seqUrl);
+    });
 
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
