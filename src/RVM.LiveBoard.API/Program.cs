@@ -8,6 +8,7 @@ using RVM.LiveBoard.API.Middleware;
 using RVM.LiveBoard.API.Services;
 using RVM.LiveBoard.Infrastructure;
 using RVM.LiveBoard.Infrastructure.Data;
+using RVM.Common.Security;
 using Serilog;
 using Serilog.Formatting.Compact;
 
@@ -82,6 +83,7 @@ try
         app.UsePathBase(pathBase);
 
     app.UseForwardedHeaders();
+    app.UseSecurityHeaders();
     app.UseStaticFiles();
     app.UseAntiforgery();
     app.UseMiddleware<CorrelationIdMiddleware>();
