@@ -1,7 +1,9 @@
 @inherits LayoutComponentBase
 
+<a class="skip-nav" href="#main-content">Pular para o conteúdo</a>
+
 <div class="app-layout">
-    <nav class="sidebar">
+    <nav class="sidebar" aria-label="Menu principal">
         <div class="sidebar-header">
             <h1 class="sidebar-title">RVM.LiveBoard</h1>
             <span class="sidebar-subtitle">Monitoring</span>
@@ -29,7 +31,7 @@
         </ul>
     </nav>
 
-    <main class="main-content">
+    <main id="main-content" class="main-content" role="main">
         <header class="main-header">
             <h2>RVM.LiveBoard</h2>
             <span class="header-label">Monitoring</span>
