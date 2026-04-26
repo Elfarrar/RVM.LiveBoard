@@ -8,6 +8,7 @@ using RVM.LiveBoard.API.Middleware;
 using RVM.LiveBoard.API.Services;
 using RVM.LiveBoard.Infrastructure;
 using RVM.LiveBoard.Infrastructure.Data;
+using RVM.Common.Security;
 using Serilog;
 using Serilog.Formatting.Compact;
 
@@ -88,24 +89,7 @@ try
         app.UseHsts();
     }
 
-    app.Use(async (context, next) =>
-    {
-        var headers = context.Response.Headers;
-        headers["X-Content-Type-Options"] = "nosniff";
-        headers["X-Frame-Options"] = "DENY";
-        headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-        headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
-        headers["Content-Security-Policy"] =
-            "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline'; " +
-            "style-src 'self' 'unsafe-inline'; " +
-            "font-src 'self'; " +
-            "img-src 'self' data:; " +
-            "connect-src 'self' wss:; " +
-            "frame-ancestors 'none';";
-        await next();
-    });
-
+    app.UseSecurityHeaders();
     app.UseStaticFiles();
     app.UseAntiforgery();
     app.UseMiddleware<CorrelationIdMiddleware>();
